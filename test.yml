@@ -1,0 +1,106 @@
+name: Generate Changelog
+
+on:
+  issues:
+    types: [closed]
+  workflow_dispatch:
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate Defect Log
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "# 🐛 Defect Log" > DEFECT_LOG.md
+          echo "" >> DEFECT_LOG.md
+
+          DEFECTS=$(gh issue list \
+            --repo "$REPO" \
+            --state closed \
+            --label "defect" \
+            --limit 100 \
+            --json number,title,author,closedAt \
+            | jq -r '.[] | "- [#\(.number)](https://github.com/'"$REPO"'/issues/\(.number)) \(.title) — opened by @\(.author.login) _(closed \(.closedAt[:10]))_"')
+          if [ -z "$DEFECTS" ]; then
+            echo "_No defects logged yet._" >> DEFECT_LOG.md
+          else
+            echo "$DEFECTS" >> DEFECT_LOG.md
+          fi
+
+      - name: Generate Conflict Log
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "# ⚠️ Conflict Log" > CONFLICT_LOG.md
+          echo "" >> CONFLICT_LOG.md
+
+          CONFLICTS=$(gh issue list \
+            --repo "$REPO" \
+            --state closed \
+            --label "conflict" \
+            --limit 100 \
+            --json number,title,author,closedAt \
+            | jq -r '.[] | "- [#\(.number)](https://github.com/'"$REPO"'/issues/\(.number)) \(.title) — opened by @\(.author.login) _(closed \(.closedAt[:10]))_"')
+          if [ -z "$CONFLICTS" ]; then
+            echo "_No conflicts logged yet._" >> CONFLICT_LOG.md
+          else
+            echo "$CONFLICTS" >> CONFLICT_LOG.md
+          fi
+
+      - name: Generate Changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "# 📋 Changelog" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+
+          CHANGES=$(gh issue list \
+            --repo "$REPO" \
+            --state closed \
+            --label "changelog" \
+            --limit 100 \
+            --json number,title,author,closedAt \
+            | jq -r '.[] | "- [#\(.number)](https://github.com/'"$REPO"'/issues/\(.number)) \(.title) — opened by @\(.author.login) _(closed \(.closedAt[:10]))_"')
+          if [ -z "$CHANGES" ]; then
+            echo "_No changes logged yet._" >> CHANGELOG.md
+          else
+            echo "$CHANGES" >> CHANGELOG.md
+          fi
+
+      - name: Warn on Unlabeled Issue
+        if: github.event_name == 'issues'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          LABELS=$(gh issue view "$ISSUE_NUMBER" \
+            --repo "$REPO" \
+            --json labels \
+            | jq -r '[.labels[].name] | @csv')
+
+          if [[ "$LABELS" != *"defect"* && "$LABELS" != *"conflict"* && "$LABELS" != *"changelog"* ]]; then
+            echo "⚠️ Issue #$ISSUE_NUMBER was closed without a defect/conflict/changelog label — it won't appear in any log."
+          fi
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add DEFECT_LOG.md CONFLICT_LOG.md CHANGELOG.md
+          git commit -m "docs(changelog): auto-update logs [skip ci]" || echo "No changes to commit"
+          git push
