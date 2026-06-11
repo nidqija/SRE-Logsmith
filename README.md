@@ -58,12 +58,21 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
----
 
 ## Log Output Format
 
 Each log file entry follows this format:
----
+
+```markdown
+- [#42](https://github.com/org/repo/issues/42) Fix login crash — opened by @alice _(closed 2024-06-10)_
+```
+
+| Field | Example | Description |
+|---|---|---|
+| Issue ID | `#42` | Clickable link to the original issue |
+| Title | `Fix login crash` | The issue title |
+| Opener | `@alice` | GitHub username of who opened the issue |
+| Closed date | `2024-06-10` | Date the issue was closed (YYYY-MM-DD) |
 
 ## Labels
 
