@@ -1,5 +1,4 @@
 # SRE-Logsmith
-
 > *Label it. Close it. Logged.*
 
 Automatically generates separate log files from closed GitHub issues, organized by label.
@@ -16,7 +15,7 @@ Built for teams who want a simple, label-driven way to track what went wrong, wh
 
 ## Features
 
-- 🐛 **Defect Log** — tracks all closed issues labeled `defect`
+- 🐛 **Defect Log** — tracks all closed issues labeled `content defect`, `documentation defect`, or `agreement defect`
 - ⚠️ **Conflict Log** — tracks all closed issues labeled `conflict`
 - 📋 **Changelog** — tracks all closed issues labeled `changelog`
 - 👤 **Issue opener tracking** — shows who opened each issue with a clickable `@username`
@@ -27,83 +26,38 @@ Built for teams who want a simple, label-driven way to track what went wrong, wh
 ---
 
 ## How It Works
-1. Create an issue and assign it a label (`defect`, `conflict`, or `changelog`)
+
+1. Create an issue and assign it a label (`content defect`, `documentation defect`, `agreement defect`, `conflict`, or `changelog`)
 2. Close the issue once resolved
 3. SRE-Logsmith automatically updates the corresponding log file
 4. Changes are committed directly to your repository
 
 ---
 
-## Usage
+## Setup
 
-```yaml
-name: Generate Logs
+### Step 1 — Create Labels
 
-on:
-  issues:
-    types: [closed]
-  workflow_dispatch:
+Before using SRE-Logsmith, create the labels in your repository:
 
-jobs:
-  update-logs:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      issues: write
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: nidqija/SRE-Logsmith@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-
-## Log Output Format
-
-Each log file entry follows this format:
-
-```markdown
-- [#42](https://github.com/org/repo/issues/42) Fix login crash — opened by @alice _(closed 2024-06-10)_
-```
-
-| Field | Example | Description |
-|---|---|---|
-| Issue ID | `#42` | Clickable link to the original issue |
-| Title | `Fix login crash` | The issue title |
-| Opener | `@alice` | GitHub username of who opened the issue |
-| Closed date | `2024-06-10` | Date the issue was closed (YYYY-MM-DD) |
-
-## Labels
-
-Create these labels in your repository under **Issues → Labels**:
+1. Go to your repository → **Issues** tab
+2. Click **Labels** next to the search bar
+3. Click **New label** and create each of the following:
 
 | Label | Color | Description |
 |---|---|---|
-| `defect` | `#d73a4a` | Something isn't working |
+| `content defect` | `#d73a4a` | Issues related to content errors |
+| `documentation defect` | `#e11d48` | Issues related to documentation errors |
+| `agreement defect` | `#be123c` | Issues related to agreement or SLA mismatches |
 | `conflict` | `#e4e669` | Conflicting changes |
 | `changelog` | `#0075ca` | Track changes |
 
----
+4. Repeat for all labels
 
-## Generated Files
-
-| File | Label | Description |
-|---|---|---|
-| `DEFECT_LOG.md` | `defect` | Tracks bugs and broken functionality |
-| `CONFLICT_LOG.md` | `conflict` | Tracks merge conflicts and resolution history |
-| `CHANGELOG.md` | `changelog` | Tracks general changes and updates |
+> ⚠️ Labels must be created before closing any issues, otherwise the issue won't appear in any log.
 
 ---
 
-## Requirements
+### Step 2 — Add the Workflow
 
-- GitHub Actions enabled on your repository
-- Issues feature enabled
-- Labels created before closing issues
-
----
-
-## License
-
-MIT © [nidqija](https://github.com/nidqija)
+1. In your repository, create the following folder path if it doesn't exist:
