@@ -1,17 +1,14 @@
 name: Generate Changelog
-
 on:
   issues:
     types: [closed]
   workflow_dispatch:
-
 jobs:
   update-changelog:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       issues: write
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -26,17 +23,56 @@ jobs:
           echo "# 🐛 Defect Log" > DEFECT_LOG.md
           echo "" >> DEFECT_LOG.md
 
-          DEFECTS=$(gh issue list \
+          # Content Defects
+          echo "## 📝 Content Defects" >> DEFECT_LOG.md
+          echo "" >> DEFECT_LOG.md
+          CONTENT=$(gh issue list \
             --repo "$REPO" \
             --state closed \
-            --label "defect" \
+            --label "content defect" \
             --limit 100 \
             --json number,title,author,closedAt \
             | jq -r '.[] | "- [#\(.number)](https://github.com/'"$REPO"'/issues/\(.number)) \(.title) — opened by @\(.author.login) _(closed \(.closedAt[:10]))_"')
-          if [ -z "$DEFECTS" ]; then
-            echo "_No defects logged yet._" >> DEFECT_LOG.md
+          if [ -z "$CONTENT" ]; then
+            echo "_No content defects logged yet._" >> DEFECT_LOG.md
           else
-            echo "$DEFECTS" >> DEFECT_LOG.md
+            echo "$CONTENT" >> DEFECT_LOG.md
+          fi
+
+          echo "" >> DEFECT_LOG.md
+
+          # Documentation Defects
+          echo "## 📄 Documentation Defects" >> DEFECT_LOG.md
+          echo "" >> DEFECT_LOG.md
+          DOCS=$(gh issue list \
+            --repo "$REPO" \
+            --state closed \
+            --label "documentation defect" \
+            --limit 100 \
+            --json number,title,author,closedAt \
+            | jq -r '.[] | "- [#\(.number)](https://github.com/'"$REPO"'/issues/\(.number)) \(.title) — opened by @\(.author.login) _(closed \(.closedAt[:10]))_"')
+          if [ -z "$DOCS" ]; then
+            echo "_No documentation defects logged yet._" >> DEFECT_LOG.md
+          else
+            echo "$DOCS" >> DEFECT_LOG.md
+          fi
+
+          echo "" >> DEFECT_LOG.md
+
+          # Agreement Defects
+          echo "## 🤝 Agreement Defects" >> DEFECT_LOG.md
+          echo "" >> DEFECT_LOG.md
+          AGREEMENT=$(gh issue list \
+            --repo "$REPO" \
+            --state closed \
+            --label "agreement defect" \
+            --limit 100 \
+            --json number,title,author,closedAt \
+            | jq -r '.[] | "- [#\(.number)](https://github.com/'"$REPO"'/issues/\(.number)) \(.title) — opened by @\(.author.login) _(closed \(.closedAt[:10]))_"')
+          if [ -z "$AGREEMENT" ]; then
+            echo "_No agreement defects logged yet._" >> DEFECT_LOG.md
+          else
+            echo "$AGREEMENT" >> DEFECT_LOG.md
           fi
 
       - name: Generate Conflict Log
@@ -46,7 +82,6 @@ jobs:
         run: |
           echo "# ⚠️ Conflict Log" > CONFLICT_LOG.md
           echo "" >> CONFLICT_LOG.md
-
           CONFLICTS=$(gh issue list \
             --repo "$REPO" \
             --state closed \
@@ -67,7 +102,6 @@ jobs:
         run: |
           echo "# 📋 Changelog" > CHANGELOG.md
           echo "" >> CHANGELOG.md
-
           CHANGES=$(gh issue list \
             --repo "$REPO" \
             --state closed \
@@ -92,9 +126,8 @@ jobs:
             --repo "$REPO" \
             --json labels \
             | jq -r '[.labels[].name] | @csv')
-
-          if [[ "$LABELS" != *"defect"* && "$LABELS" != *"conflict"* && "$LABELS" != *"changelog"* ]]; then
-            echo "⚠️ Issue #$ISSUE_NUMBER was closed without a defect/conflict/changelog label — it won't appear in any log."
+          if [[ "$LABELS" != *"content defect"* && "$LABELS" != *"documentation defect"* && "$LABELS" != *"agreement defect"* && "$LABELS" != *"conflict"* && "$LABELS" != *"changelog"* ]]; then
+            echo "⚠️ Issue #$ISSUE_NUMBER was closed without a recognized label — it won't appear in any log."
           fi
 
       - name: Commit and Push Changes
