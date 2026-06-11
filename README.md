@@ -38,7 +38,7 @@ Built for teams who want a simple, label-driven way to track what went wrong, wh
 
 ### Step 1 — Add the Workflow
 
-1. Go to your repository → **Actions** tab
+1. Go to your newly created repository → **Actions** tab
 2. Click **set up a workflow yourself**
 3. Rename the file to `changelog.yml`
 4. Clear the default content and paste the following workflow:
